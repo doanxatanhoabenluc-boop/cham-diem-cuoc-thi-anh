@@ -919,11 +919,12 @@ function EntryModal({
       const invalid = CRITERIA.filter(c => {
         const raw = String(values[c.key]).trim();
         if (!raw) return false;
+        const validFormat = /^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(raw);
         const score = Number(raw);
-        return !Number.isFinite(score) || !Number.isInteger(score) || score < 0;
+        return !validFormat || !Number.isFinite(score) || score < 0;
       });
       if (invalid.length) {
-        problems.push(`Điểm phải là số nguyên không âm: ${invalid.map(c => c.title).join(', ')}.`);
+        problems.push(`Điểm phải là số không âm, tối đa 2 chữ số thập phân (ví dụ 10.75): ${invalid.map(c => c.title).join(', ')}.`);
       }
 
       const overLimit = CRITERIA.filter(c => String(values[c.key]).trim() !== '' && Number(values[c.key]) > c.max);
@@ -1066,6 +1067,10 @@ function EntryModal({
                   </strong>
                 </div>
 
+                <p className="score-decimal-warning" role="note">
+                  LƯU Ý: BGK được nhập điểm thập phân tối đa 2 chữ số, ví dụ 10.75 hoặc 9.5. Vui lòng không nhập vượt điểm tối đa của từng tiêu chí.
+                </p>
+
                 {CRITERIA.map(c => (
                   <div className="criterion" key={c.key}>
                     <div>
@@ -1075,11 +1080,9 @@ function EntryModal({
 
                     <div className="score-input">
                       <input
-                        type="number"
-                        min="0"
-                        max={c.max}
-                        step="1"
-                        aria-label={`${c.title}, tối đa ${c.max} điểm`}
+                        type="text"
+                        inputMode="decimal"
+                        aria-label={`${c.title}, tối đa ${c.max} điểm; được nhập tối đa 2 chữ số thập phân`}
                         value={values[c.key]}
                         onChange={e =>
                           setValues(v => ({
