@@ -355,3 +355,31 @@
 @media(max-width:700px){.gallery-heading-actions{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:stretch;justify-content:stretch;gap:8px}.gallery-heading-actions .heading-stat{align-self:stretch;display:flex;flex-direction:column;justify-content:center}.delete-all-btn{width:100%;min-height:46px;padding:10px 8px;font-size:10px;white-space:normal;line-height:1.35}}
 
 .score-decimal-warning{margin:0 0 10px;padding:10px 12px;border:1px solid #f2b8b5;border-left:4px solid #d93025;border-radius:7px;background:#fff1f0;color:#b42318;font-size:10px;font-weight:700;line-height:1.65}
+
+
+/* Admin: tải ảnh vinh danh 01 Nhất, 02 Nhì, 03 Ba */
+.winner-admin-page{display:grid;gap:18px;max-width:1100px;margin:0 auto}
+.winner-admin-page .page-heading{margin-bottom:0}
+.winner-admin-page .page-heading h1{margin:5px 0;font-size:24px;color:#19384d}
+.winner-admin-page .page-heading p{max-width:700px;color:#788a98;font-size:12px;line-height:1.7}
+.winner-admin-note,.winner-admin-message{padding:12px 14px;border-radius:10px;font-size:11px;line-height:1.65}
+.winner-admin-note{background:#fff8e9;border:1px solid #f0dfb8;color:#81683b}
+.winner-admin-message{background:#eaf5ef;border:1px solid #cce7d7;color:#286b4a;overflow-wrap:anywhere}
+.winner-admin-group{display:grid;gap:11px}
+.winner-admin-group-head{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e5ebef;padding-bottom:8px}
+.winner-admin-group-head h2{font-size:13px;letter-spacing:1px;color:#25485e;margin:0}
+.winner-admin-group-head span{font-size:10px;color:#8797a2}
+.winner-admin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.winner-admin-card{min-width:0;background:#fff;border:1px solid #e2e9ed;border-radius:13px;padding:11px;display:grid;gap:9px;box-shadow:0 4px 15px #19364b08}
+.winner-admin-preview{height:170px;border-radius:9px;overflow:hidden;background:#f0f3f4;display:grid;place-items:center}
+.winner-admin-preview img{width:100%;height:100%;object-fit:cover}
+.winner-admin-preview>div{display:grid;justify-items:center;gap:6px;color:#a18a62;text-align:center;padding:12px}
+.winner-admin-preview>div b{font-size:11px}.winner-admin-preview>div small{font-size:9px;color:#8c9aa3}
+.winner-admin-info{display:grid;gap:4px;min-width:0}.winner-admin-info>span{font-size:9px;color:#a27b3d;font-weight:800;text-transform:uppercase;letter-spacing:.5px}.winner-admin-info>b{font-size:12px;color:#24465a}.winner-admin-info>small{font-size:10px;color:#82919b;line-height:1.45;overflow-wrap:anywhere}
+.winner-file-label{display:flex;align-items:center;justify-content:center;gap:7px;min-height:40px;border:1px dashed #b9c9d2;border-radius:8px;color:#315e76;background:#f7fafb;font-size:10px;font-weight:800;cursor:pointer;text-align:center;padding:8px}
+.winner-file-label input{display:none}
+.winner-save-btn,.winner-remove-btn{min-height:39px;border:0;border-radius:8px;font-size:10px;font-weight:800;cursor:pointer}
+.winner-save-btn{background:#174c62;color:#fff}.winner-save-btn:disabled{opacity:.45;cursor:not-allowed}
+.winner-remove-btn{background:#fff4f3;border:1px solid #f0d1ce;color:#a3443b}
+@media(max-width:760px){.winner-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.winner-admin-card{padding:8px}.winner-admin-preview{height:135px}.winner-admin-page .page-heading h1{font-size:19px}}
+@media(max-width:430px){.winner-admin-grid{grid-template-columns:1fr}.winner-admin-card{grid-template-columns:112px minmax(0,1fr);align-items:start;gap:8px}.winner-admin-preview{grid-row:span 4;height:112px}.winner-admin-info{align-self:center}.winner-file-label,.winner-save-btn,.winner-remove-btn{grid-column:2;min-height:36px}.winner-admin-group-head h2{font-size:12px}}

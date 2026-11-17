@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Aperture, ImagePlus, LayoutDashboard, Images, ClipboardCheck, FileBarChart,
-  Users, LogOut, Menu, X, Search, ChevronLeft, ChevronRight, CheckCircle2,
+  Users, LogOut, Menu, X, Search, ChevronLeft, ChevronRight, CheckCircle2, Crown,
   Eye, MessageSquareText, Save, Upload, FileSpreadsheet, ShieldCheck, Lock,
   AlertTriangle, RefreshCw, UserRound, Trash2, Filter, Download
 } from 'lucide-react';
@@ -9,6 +9,8 @@ import * as XLSX from 'xlsx';
 import { supabase, supabaseReady } from './lib/supabase';
 import { CRITERIA, totalScore, isComplete } from './lib/criteria';
 import { parseEntryTxt, pairUploads } from './lib/txtParser';
+import resultData from './ket-qua-data.json';
+import './winner-admin.css';
 
 const BUCKET = 'contest-images';
 const fmt = n => Number(n || 0).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
@@ -518,6 +520,16 @@ export default function App() {
               />
 
               <NavItem
+                icon={<Crown />}
+                label="Ảnh vinh danh giải thưởng"
+                active={page === 'winner-gallery'}
+                onClick={() => {
+                  setPage('winner-gallery');
+                  setDrawer(false);
+                }}
+              />
+
+              <NavItem
                 icon={<Users />}
                 label="Quản lý tài khoản"
                 active={page === 'users'}
@@ -591,6 +603,8 @@ export default function App() {
             />
           )}
 
+          {page === 'winner-gallery' && canAdmin && <WinnerGalleryAdmin />}
+
           {page === 'users' && canAdmin && <UsersPage onScoresReset={loadData} />}
         </main>
       </div>
@@ -628,6 +642,172 @@ function roleLabel(role) {
     judge: 'Ban Giám khảo',
     reporter: 'Người xem báo cáo'
   })[role] || 'Tài khoản';
+}
+
+const WINNER_BUCKET = 'contest-winners';
+const winnerEntries = [
+  ...resultData.filter(item => item.award === 'Giải Nhất').map((item, index) => ({ ...item, awardLabel: 'Giải Nhất', slot: `first-${index + 1}` })),
+  ...resultData.filter(item => item.award === 'Giải Nhì').map((item, index) => ({ ...item, awardLabel: 'Giải Nhì', slot: `second-${index + 1}` })),
+  ...resultData.filter(item => item.award === 'Giải Ba').map((item, index) => ({ ...item, awardLabel: 'Giải Ba', slot: `third-${index + 1}` }))
+];
+
+function WinnerImageCropper({ file, onCancel, onApply }) {
+  const [src, setSrc] = useState('');
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const dragRef = React.useRef(null);
+  const imageRef = React.useRef(null);
+  const stageRef = React.useRef(null);
+  const OUT_W = 1560, OUT_H = 1020;
+  const VIEW_W = stageRef.current?.clientWidth || 520, VIEW_H = VIEW_W * 340 / 520;
+  useEffect(() => { const url = URL.createObjectURL(file); setSrc(url); return () => URL.revokeObjectURL(url); }, [file]);
+  function imageLayout() {
+    const img = imageRef.current;
+    if (!img?.naturalWidth) return null;
+    const scale = Math.max(VIEW_W / img.naturalWidth, VIEW_H / img.naturalHeight) * zoom;
+    return { width: img.naturalWidth * scale, height: img.naturalHeight * scale };
+  }
+  function startDrag(e) { e.preventDefault(); e.currentTarget.setPointerCapture?.(e.pointerId); dragRef.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y }; setDragging(true); }
+  function moveDrag(e) { if (dragRef.current) setOffset({ x: dragRef.current.ox + e.clientX - dragRef.current.x, y: dragRef.current.oy + e.clientY - dragRef.current.y }); }
+  function endDrag() { dragRef.current = null; setDragging(false); }
+  async function applyCrop() {
+    const img = imageRef.current, layout = imageLayout(); if (!img || !layout) return;
+    setBusy(true);
+    try {
+      const scale = layout.width / img.naturalWidth;
+      const left = (VIEW_W - layout.width) / 2 + offset.x, top = (VIEW_H - layout.height) / 2 + offset.y;
+      const canvas = document.createElement('canvas'); canvas.width = OUT_W; canvas.height = OUT_H;
+      const ctx = canvas.getContext('2d'); ctx.fillStyle = '#f4efe5'; ctx.fillRect(0, 0, OUT_W, OUT_H);
+      ctx.drawImage(img, -left / scale, -top / scale, VIEW_W / scale, VIEW_H / scale, 0, 0, OUT_W, OUT_H);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+      if (!blob) throw new Error('Không tạo được ảnh đã căn chỉnh.');
+      onApply(new File([blob], `${file.name.replace(/\.[^.]+$/, '')}-can-chinh.jpg`, { type: 'image/jpeg' }));
+    } catch (e) { alert(e.message || 'Không thể căn chỉnh ảnh.'); } finally { setBusy(false); }
+  }
+  const layout = imageLayout();
+  return <div className="winner-crop-backdrop" role="dialog" aria-modal="true" onMouseDown={e => { if (e.target === e.currentTarget) onCancel(); }}>
+    <div className="winner-crop-dialog">
+      <div className="winner-crop-head"><div><b>CĂN CHỈNH ẢNH VỪA KHUNG</b><small>Kéo ảnh để di chuyển · Dùng thanh thu phóng để phóng to/thu nhỏ</small></div><button onClick={onCancel} aria-label="Đóng">×</button></div>
+      <div className="winner-crop-stage-wrap"><div ref={stageRef} className="winner-crop-stage" onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} style={{ cursor: dragging ? 'grabbing' : 'grab' }}>
+        {src && <img ref={imageRef} src={src} alt="Ảnh đang căn chỉnh" onLoad={() => setOffset({x:0,y:0})} draggable="false" style={layout ? { width: layout.width, height: layout.height, left: `calc(50% + ${offset.x}px)`, top: `calc(50% + ${offset.y}px)`, transform: 'translate(-50%,-50%)' } : {}}/>}
+        <span className="winner-crop-frame"/><span className="winner-crop-tip">KHUNG ẢNH HIỂN THỊ</span>
+      </div></div>
+      <div className="winner-crop-controls"><label>Thu nhỏ <input type="range" min="1" max="3" step="0.01" value={zoom} onChange={e => setZoom(Number(e.target.value))}/> Phóng to <b>{zoom.toFixed(2)}×</b></label><button className="winner-crop-reset" onClick={() => {setZoom(1);setOffset({x:0,y:0});}}>Đặt lại</button></div>
+      <div className="winner-crop-actions"><button onClick={onCancel} className="winner-crop-cancel">Hủy</button><button onClick={applyCrop} className="winner-crop-apply" disabled={!layout || busy}>{busy ? 'Đang xử lý…' : 'Dùng ảnh này'}</button></div>
+    </div>
+  </div>;
+}
+
+function WinnerGalleryAdmin() {
+  const [saved, setSaved] = useState({});
+  const [files, setFiles] = useState({});
+  const [busySlot, setBusySlot] = useState('');
+  const [message, setMessage] = useState('');
+  const [cropTarget, setCropTarget] = useState(null);
+
+  async function loadWinnerImages() {
+    const { data, error } = await supabase.from('winner_gallery').select('*');
+    if (error) {
+      setMessage('Chưa đọc được danh sách ảnh. Bạn kiểm tra đã chạy file SQL winner-gallery-migration.sql chưa. ' + error.message);
+      return;
+    }
+    setSaved(Object.fromEntries((data || []).map(row => [row.entry_source_no, row])));
+  }
+
+  useEffect(() => { loadWinnerImages(); }, []);
+
+  async function saveImage(entry) {
+    const file = files[entry.sourceNo];
+    if (!file) {
+      setMessage('Bạn hãy chọn ảnh cho tác phẩm trước khi lưu.');
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setMessage('Chỉ hỗ trợ ảnh JPG, PNG hoặc WEBP.');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setMessage('Ảnh vượt quá 8 MB. Vui lòng chọn ảnh nhẹ hơn.');
+      return;
+    }
+
+    setBusySlot(entry.sourceNo);
+    setMessage('');
+    const old = saved[entry.sourceNo];
+    const path = `winners/${entry.sourceNo}-${Date.now()}.jpg`;
+    try {
+      const { error: uploadError } = await supabase.storage.from(WINNER_BUCKET).upload(path, file, {
+        cacheControl: '3600', contentType: 'image/jpeg', upsert: false
+      });
+      if (uploadError) throw uploadError;
+
+      const { data, error } = await supabase.from('winner_gallery').upsert({
+        entry_source_no: String(entry.sourceNo),
+        award: entry.awardLabel,
+        image_path: path,
+        author_name: entry.author,
+        entry_title: entry.title,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'entry_source_no' }).select().single();
+      if (error) {
+        await supabase.storage.from(WINNER_BUCKET).remove([path]);
+        throw error;
+      }
+      setSaved(current => ({ ...current, [entry.sourceNo]: data }));
+      setFiles(current => ({ ...current, [entry.sourceNo]: null }));
+      if (old?.image_path) await supabase.storage.from(WINNER_BUCKET).remove([old.image_path]);
+      setMessage(`Đã cập nhật ảnh ${entry.awardLabel} – ${entry.author}.`);
+    } catch (error) {
+      setMessage('Không tải được ảnh: ' + errText(error));
+    } finally {
+      setBusySlot('');
+    }
+  }
+
+  async function removeImage(entry) {
+    const old = saved[entry.sourceNo];
+    if (!old) return;
+    if (!window.confirm(`Xóa ảnh vinh danh của ${entry.author}?`)) return;
+    setBusySlot(entry.sourceNo);
+    try {
+      const { error } = await supabase.from('winner_gallery').delete().eq('entry_source_no', String(entry.sourceNo));
+      if (error) throw error;
+      await supabase.storage.from(WINNER_BUCKET).remove([old.image_path]);
+      setSaved(current => { const next = { ...current }; delete next[entry.sourceNo]; return next; });
+      setMessage('Đã xóa ảnh vinh danh.');
+    } catch (error) {
+      setMessage('Không xóa được ảnh: ' + errText(error));
+    } finally { setBusySlot(''); }
+  }
+
+  const grouped = [
+    { title: 'GIẢI NHẤT', desc: '01 tác phẩm', entries: winnerEntries.filter(x => x.awardLabel === 'Giải Nhất') },
+    { title: 'GIẢI NHÌ', desc: '02 tác phẩm', entries: winnerEntries.filter(x => x.awardLabel === 'Giải Nhì') },
+    { title: 'GIẢI BA', desc: '03 tác phẩm', entries: winnerEntries.filter(x => x.awardLabel === 'Giải Ba') }
+  ];
+
+  return <section className="winner-admin-page">
+    <div className="page-heading"><div><span className="eyebrow">VINH DANH TÁC PHẨM</span><h1>Ảnh vinh danh giải thưởng</h1><p>Tải ảnh thực tế cho 01 giải Nhất, 02 giải Nhì và 03 giải Ba. Ảnh sẽ xuất hiện trên pano ở trang công bố kết quả.</p></div></div>
+    {message && <div className="winner-admin-message">{message}</div>}
+    <div className="winner-admin-note"><b>Lưu ý:</b> Ảnh tải lên được lưu trên Supabase Storage. Người xem trang công bố không cần đăng nhập; họ chỉ có quyền xem ảnh, không thể thay đổi ảnh.</div>
+    {grouped.map(group => <div className="winner-admin-group" key={group.title}>
+      <div className="winner-admin-group-head"><h2>{group.title}</h2><span>{group.desc}</span></div>
+      <div className="winner-admin-grid">{group.entries.map(entry => {
+        const row = saved[entry.sourceNo];
+        const preview = files[entry.sourceNo] ? URL.createObjectURL(files[entry.sourceNo]) : row?.image_path ? supabase.storage.from(WINNER_BUCKET).getPublicUrl(row.image_path).data.publicUrl : '';
+        return <article className="winner-admin-card" key={entry.sourceNo}>
+          <div className="winner-admin-preview">{preview ? <img src={preview} alt={entry.title}/> : <div><ImagePlus size={28}/><b>Chưa có ảnh</b><small>Chọn ảnh tác phẩm để tải lên</small></div>}</div>
+          <div className="winner-admin-info"><span>{entry.awardLabel} · Mã {entry.sourceNo}</span><b>{entry.author}</b><small>{entry.title}</small><small>{fmt(entry.finalScore)} điểm</small></div>
+          <label className="winner-file-label"><Upload size={16}/>{files[entry.sourceNo] ? 'Đã căn chỉnh ảnh' : row ? 'Chọn ảnh thay thế' : 'Tải ảnh lên'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { const picked = e.target.files?.[0]; if (picked) setCropTarget({ entry, file: picked }); e.target.value = ''; }}/></label>
+          <button className="winner-save-btn" disabled={!files[entry.sourceNo] || busySlot === entry.sourceNo} onClick={() => saveImage(entry)}>{busySlot === entry.sourceNo ? 'Đang lưu…' : 'Lưu ảnh vinh danh'}</button>
+          {row && <button className="winner-remove-btn" disabled={busySlot === entry.sourceNo} onClick={() => removeImage(entry)}>Xóa ảnh hiện tại</button>}
+        </article>;
+      })}</div>
+    </div>)}
+    {cropTarget && <WinnerImageCropper file={cropTarget.file} onCancel={() => setCropTarget(null)} onApply={cropped => { setFiles(current => ({ ...current, [cropTarget.entry.sourceNo]: cropped })); setCropTarget(null); setMessage('Ảnh đã được căn chỉnh. Bạn nhấn “Lưu ảnh vinh danh” để đăng lên trang kết quả.'); }}/>}
+  </section>;
 }
 
 function SetupScreen() {
