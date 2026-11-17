@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, ChevronDown, ChevronUp, Trophy, Medal, Award, Users, Camera, Heart, MessageCircle, Share2, ArrowUpRight, Sparkles } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, Trophy, Medal, Award, Users, Camera, Heart, MessageCircle, Share2, ArrowUpRight, Sparkles, Calculator, X, CheckCircle2, ShieldAlert } from 'lucide-react';
 import resultData from './ket-qua-data.json';
 import './public-results.css';
 import { supabase } from './lib/supabase';
@@ -67,6 +67,79 @@ function ResultCard({ item, expanded, onToggle }) {
   </article>;
 }
 
+
+function ScoreInfoDialog({ onClose }) {
+  return <div className="pub-score-info-backdrop" role="dialog" aria-modal="true" aria-labelledby="pub-score-info-title" onClick={onClose}>
+    <div className="pub-score-info-dialog" onClick={e => e.stopPropagation()}>
+      <header className="pub-score-info-header">
+        <div className="pub-score-info-heading-icon"><Calculator size={22}/></div>
+        <div>
+          <span>THỂ LỆ CHẤM ĐIỂM</span>
+          <h2 id="pub-score-info-title">Cách tính điểm cuộc thi</h2>
+          <p>Nguyên tắc tổng hợp điểm và đối soát bình chọn Fanpage</p>
+        </div>
+        <button type="button" className="pub-score-info-close" onClick={onClose} aria-label="Đóng"><X size={21}/></button>
+      </header>
+      <div className="pub-score-info-content">
+        <section className="pub-score-info-section">
+          <div className="pub-score-info-section-title"><span>01</span><div><h3>Cơ cấu tính điểm</h3><p>Điểm chung cuộc gồm điểm Ban Giám khảo, điểm bình chọn Fanpage và điểm thưởng Follows.</p></div></div>
+          <div className="pub-score-weight-grid">
+            <div><b>50%</b><strong>Điểm trung bình BGK</strong><small>Điểm đánh giá của Ban Giám khảo</small></div>
+            <div><b>50%</b><strong>Điểm bình chọn Fanpage</strong><small>Điểm tương tác được quy đổi về thang 100</small></div>
+          </div>
+          <div className="pub-score-follow-note"><Users size={19}/><div><b>Điểm Follows – điểm thưởng</b><span>Là số tài khoản bắt đầu theo dõi trang <strong>Truyền Thông xã Lương Hòa</strong> từ bài viết dự thi của bạn trong khoảng thời gian bình chọn.</span></div></div>
+          <div className="pub-score-formula-card">
+            <span>CÔNG THỨC ĐIỂM CHUNG CUỘC</span>
+            <strong>(Điểm FP quy đổi + Điểm TB BGK ) ÷ 2 + Điểm Follows</strong>
+            <small>Công thức được trình bày theo bảng tổng hợp kết quả của Ban tổ chức.</small>
+          </div>
+        </section>
+
+        <section className="pub-score-info-section">
+          <div className="pub-score-info-section-title"><span>02</span><div><h3>Cách tính điểm bình chọn Fanpage</h3><p>Chỉ ghi nhận các tương tác hợp lệ sau khi đối soát.</p></div></div>
+          <div className="pub-score-reaction-grid">
+            <div><Heart size={19}/><b>Like / cảm xúc</b><strong>1 điểm</strong><small>Chỉ tính lượt tương tác thật.</small></div>
+            <div><MessageCircle size={19}/><b>Bình luận</b><strong>1 điểm</strong><small>Mỗi tài khoản chỉ tính 1 bình luận trên 1 bài đăng.</small></div>
+            <div><Share2 size={19}/><b>Chia sẻ</b><strong>2 điểm</strong><small>Chỉ tính lượt chia sẻ công khai, không trùng lặp.</small></div>
+          </div>
+          <div className="pub-score-convert">
+            <span>QUY ĐỔI ĐIỂM FANPAGE VỀ THANG 100</span>
+            <strong>80 + (Điểm tổng Fanpage của bài thi ÷ Điểm Fanpage cao nhất) × 20</strong>
+            <small>Điểm Fanpage được quy đổi trong khoảng từ 80 đến 100 điểm.</small>
+          </div>
+        </section>
+
+        <section className="pub-score-info-section">
+          <div className="pub-score-info-section-title"><span>03</span><div><h3>Điều kiện tương tác hợp lệ</h3><p>Các lượt tương tác không đáp ứng điều kiện dưới đây sẽ không được tính.</p></div></div>
+          <div className="pub-score-valid-list">
+            <div><CheckCircle2 size={18}/><p><b>Like / cảm xúc:</b> Chỉ tính lượt like, thả tim và cảm xúc thật. Lượt tăng bằng tool, hack like hoặc hình thức tạo tương tác không tự nhiên sẽ bị loại. Ban tổ chức có thể đối soát, quét chênh lệch số lượng; trường hợp phát hiện vi phạm, Ban tổ chức không tiếp nhận khiếu nại.</p></div>
+            <div><CheckCircle2 size={18}/><p><b>Bình luận:</b> Mỗi tài khoản chỉ được tính 1 lần trên cùng một bài đăng. Tài khoản đặt chế độ riêng tư có thể không được hệ thống quét, ghi nhận; các lượt không xác minh được sẽ bị loại khỏi số lượng hợp lệ.</p></div>
+            <div><CheckCircle2 size={18}/><p><b>Chia sẻ:</b> Chỉ tính các lượt chia sẻ ở chế độ công khai và không trùng lặp.</p></div>
+          </div>
+          <div className="pub-score-warning"><ShieldAlert size={19}/><p>Ban tổ chức căn cứ dữ liệu đối soát và số lượng tương tác hợp lệ được duyệt để tính điểm cuối cùng.</p></div>
+        </section>
+
+        <section className="pub-score-info-section">
+          <div className="pub-score-info-section-title"><span>04</span><div><h3>Nguyên tắc đối soát và điểm bị trừ</h3><p>Đối chiếu số liệu thực tế do Meta API ghi nhận với số hợp lệ được Ban tổ chức duyệt.</p></div></div>
+          <div className="pub-score-audit-formula"><span>SỐ LƯỢNG BỊ TRỪ</span><strong>Số lượng thực tế (Meta API) − Số lượng hợp lệ được duyệt</strong></div>
+          <div className="pub-score-audit-formula"><span>ĐIỂM BỊ TRỪ</span><strong>(Like trừ × 1) + (Bình luận trừ × 1) + (Chia sẻ trừ × 2)</strong></div>
+        </section>
+
+        <section className="pub-score-info-section pub-score-prizes-section">
+          <div className="pub-score-info-section-title"><span>05</span><div><h3>Cơ cấu giải thưởng</h3><p>16 giải thưởng chính thức.</p></div></div>
+          <div className="pub-score-prize-grid">
+            <div><b>01</b><span>Giải Nhất</span></div>
+            <div><b>02</b><span>Giải Nhì</span></div>
+            <div><b>03</b><span>Giải Ba</span></div>
+            <div><b>10</b><span>Giải Khuyến khích</span></div>
+          </div>
+        </section>
+        <p className="pub-score-info-footer">Thông tin được công bố theo thể lệ và nguyên tắc tổng hợp điểm của Ban tổ chức Cuộc thi ảnh đẹp online “Chạm vào khoảnh khắc – Gửi lời tri ân”.</p>
+      </div>
+    </div>
+  </div>;
+}
+
 export default function PublicResults() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
@@ -74,6 +147,13 @@ export default function PublicResults() {
   const [sort, setSort] = useState('rank');
   const [winnerImages, setWinnerImages] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
+  const [showScoreInfo, setShowScoreInfo] = useState(false);
+  useEffect(() => {
+    if (!showScoreInfo) return;
+    const closeOnEscape = event => { if (event.key === 'Escape') setShowScoreInfo(false); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [showScoreInfo]);
   useEffect(() => {
     let active = true;
     async function loadWinnerImages() {
@@ -138,7 +218,7 @@ export default function PublicResults() {
           })}
         </div>
       </div>
-      <p className="pub-winner-hint">01 giải Nhất · 02 giải Nhì · 03 giải Ba · Ảnh được Ban tổ chức cập nhật · Pano tự động chạy ngang</p>
+      <p className="pub-winner-hint">01 giải Nhất · 02 giải Nhì · 03 giải Ba · Ảnh được Ban tổ chức cập nhật </p>
       <div className="pub-list-heading"><div><span className="pub-overline">OFFICIAL RANKING</span><h2>BẢNG KẾT QUẢ CHUNG CUỘC</h2><p>Chọn từng thí sinh để xem bảng điểm chi tiết</p></div><span className="pub-total-pill">{filtered.length} / {resultData.length} bài thi</span></div>
       <div className="pub-controls">
         <label className="pub-search"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Tìm tên tác giả, tác phẩm, đơn vị..."/>{query && <button onClick={()=>setQuery('')}>×</button>}</label>
@@ -153,6 +233,10 @@ export default function PublicResults() {
       </div>
       <footer className="pub-footer"><div className="pub-footer-mark"><Camera size={20}/></div><b>TRÂN TRỌNG CẢM ƠN</b><p>Cảm ơn tất cả tác giả đã tham gia và góp phần tạo nên thành công của cuộc thi.</p><small>KẾT QUẢ ĐƯỢC TỔNG HỢP TỪ BẢNG ĐIỂM CHÍNH THỨC CỦA BAN TỔ CHỨC</small></footer>
     </section>
+    <button type="button" className="pub-score-info-bubble" onClick={() => setShowScoreInfo(true)} aria-label="Xem cách tính điểm cuộc thi">
+      <Calculator size={19}/><span>Cách tính điểm</span>
+    </button>
+    {showScoreInfo && <ScoreInfoDialog onClose={() => setShowScoreInfo(false)}/>}
     {previewImage && <div className="pub-image-lightbox" role="dialog" aria-modal="true" aria-label="Xem ảnh tác phẩm" onClick={()=>setPreviewImage(null)}>
       <button className="pub-image-lightbox-close" type="button" aria-label="Đóng ảnh" onClick={()=>setPreviewImage(null)}>×</button>
       <div className="pub-image-lightbox-scroll" onClick={e=>e.stopPropagation()}>
